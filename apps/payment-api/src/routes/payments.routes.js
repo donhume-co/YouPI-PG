@@ -35,7 +35,7 @@ export function registerPaymentRoutes(server, ctx) {
         if (urls && urls.checkoutUrl) return urls.checkoutUrl;
       } catch {}
     }
-    return ctx.checkoutBaseUrl || process.env.CHECKOUT_PORTAL_URL || 'http://localhost:7000';
+    return ctx.checkoutBaseUrl || resolvePublicDeploymentOrigin() || 'http://localhost:7000';
   }
 
   // POST /api/v1/payments

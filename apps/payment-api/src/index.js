@@ -133,14 +133,18 @@ export function createPaymentApp(customDb = null, options = {}) {
 
   const server = new HttpServer();
   server.use(authGuard);
-  let checkoutBaseUrl = process.env.CHECKOUT_PORTAL_URL || process.env.BASE_CHECKOUT_URL || 'http://localhost:7000';
+  let checkoutBaseUrl = process.env.CHECKOUT_PUBLIC_URL
+    || process.env.PUBLIC_APP_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || process.env.BASE_CHECKOUT_URL
+    || 'http://localhost:7000';
   try {
     const rootEnv = path.resolve(__dirname, '../../../.env');
     if (fs.existsSync(rootEnv)) {
       const raw = fs.readFileSync(rootEnv, 'utf8');
       for (const line of raw.split(/\r?\n/)) {
         const trimmed = line.trim();
-        if (trimmed.startsWith('BASE_CHECKOUT_URL=') && !process.env.CHECKOUT_PORTAL_URL) {
+        if (trimmed.startsWith('BASE_CHECKOUT_URL=') && !process.env.CHECKOUT_PUBLIC_URL && !process.env.PUBLIC_APP_URL) {
           const val = trimmed.split('=')[1]?.trim();
           if (val) checkoutBaseUrl = val.replace(/^["']|["']$/g, '');
         }

@@ -45,8 +45,15 @@ export class ObserverPollerService {
     this.minSweepCooldownMs = Number(options.minSweepCooldownMs || process.env.OBSERVER_SWEEP_COOLDOWN_MS || 2000);
     this.smsPort = Number(options.smsPort || process.env.SMS_OBSERVER_PORT || 6002);
     this.gmailPort = Number(options.gmailPort || process.env.GMAIL_OBSERVER_PORT || 6003);
-    this.smsBaseUrl = options.smsBaseUrl || process.env.SMS_OBSERVER_URL || `http://localhost:${this.smsPort}`;
-    this.gmailBaseUrl = options.gmailBaseUrl || process.env.GMAIL_OBSERVER_URL || `http://localhost:${this.gmailPort}`;
+    const publicOrigin = process.env.PUBLIC_APP_URL
+      || process.env.CHECKOUT_PUBLIC_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+    this.smsBaseUrl = options.smsBaseUrl
+      || process.env.SMS_OBSERVER_URL
+      || (publicOrigin ? `${publicOrigin.replace(/\/+$/, '')}/internal/sms` : `http://localhost:${this.smsPort}`);
+    this.gmailBaseUrl = options.gmailBaseUrl
+      || process.env.GMAIL_OBSERVER_URL
+      || (publicOrigin ? `${publicOrigin.replace(/\/+$/, '')}/internal/gmail` : `http://localhost:${this.gmailPort}`);
     this.observerToken = options.observerToken || null;
 
     // Lifecycle and concurrency control state
@@ -276,7 +283,7 @@ export class ObserverPollerService {
       const token = this.observerToken || getObserverToken();
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-      await fetch(new URL('/api/sweep', this.smsBaseUrl), {
+      await fetch(new URL('api/sweep', `${this.smsBaseUrl.replace(/\/+$/, '')}/`), {
         method: 'POST',
         headers,
         signal: AbortSignal.timeout(1200)
@@ -307,7 +314,7 @@ export class ObserverPollerService {
       const token = this.observerToken || getObserverToken();
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-      await fetch(new URL('/api/sweep', this.gmailBaseUrl), {
+      await fetch(new URL('api/sweep', `${this.gmailBaseUrl.replace(/\/+$/, '')}/`), {
         method: 'POST',
         headers,
         signal: AbortSignal.timeout(1200)

@@ -31,6 +31,9 @@
       "root": "apps/gmail-observer",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
+      "rewrites": [
+        { "source": "/internal/gmail/:path(.*)", "destination": "/:path" }
+      ],
       "bindings": [
         { "type": "service", "service": "payment-api", "format": "url", "env": "PAYMENT_API_URL" }
       ]
@@ -52,11 +55,7 @@
       "root": "apps/payment-api",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
-      "bindings": [
-        { "type": "service", "service": "checkout-portal", "format": "url", "env": "CHECKOUT_PORTAL_URL" },
-        { "type": "service", "service": "gmail-observer", "format": "url", "env": "GMAIL_OBSERVER_URL" },
-        { "type": "service", "service": "sms-observer", "format": "url", "env": "SMS_OBSERVER_URL" }
-      ]
+      "bindings": []
     },
     "payment-help": {
       "root": "apps/payment-help",
@@ -74,6 +73,9 @@
       "root": "apps/sms-observer",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
+      "rewrites": [
+        { "source": "/internal/sms/:path(.*)", "destination": "/:path" }
+      ],
       "bindings": [
         { "type": "service", "service": "payment-api", "format": "url", "env": "PAYMENT_API_URL" }
       ]
@@ -87,6 +89,8 @@
     { "source": "/help", "destination": { "service": "payment-help" } },
     { "source": "/store/(.*)", "destination": { "service": "coin-wallet-store" } },
     { "source": "/store", "destination": { "service": "coin-wallet-store" } },
+    { "source": "/internal/gmail/(.*)", "destination": { "service": "gmail-observer" } },
+    { "source": "/internal/sms/(.*)", "destination": { "service": "sms-observer" } },
     { "source": "/(.*)", "destination": { "service": "checkout-portal" } }
   ]
 }
