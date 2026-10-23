@@ -12,7 +12,7 @@
 | `HELP_PORTAL_PORT` | `3000` | Host port for the Customer Payment Help Portal |
 | `GMAIL_OBSERVER_PORT` | `6003` | Host port for the Gmail Polling Service & OAuth Callback |
 | `SMS_OBSERVER_PORT` | `6002` | Host port for the Google Messages / SMS Web Automator |
-| `DATABASE_URL` | `postgresql://...` | PostgreSQL connection URL |
+| `DATABASE_URL` | `postgresql://...` | Neon PostgreSQL connection URL. When present, the gateway uses the Neon adapter; local installs without it continue using SQLite. |
 | `USE_SQLITE_FALLBACK` | `true` | When true, uses embedded SQLite if PostgreSQL is unreachable |
 | `SQLITE_DB_PATH` | `./data/youpi_pg.sqlite`| Path to local SQLite database file |
 | `ENCRYPTION_MASTER_KEY` | `64-hex chars` | 256-bit key for encrypting OAuth credentials and device keys |

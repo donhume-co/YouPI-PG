@@ -17,12 +17,12 @@ const __dirname = path.dirname(__filename);
  */
 export function runMigrations(targetDb) {
   const db = targetDb || getDatabase();
-  const schemaPath = path.join(__dirname, 'sqlite-schema.sql');
+  const schemaPath = path.join(__dirname, db.isPostgres ? 'schema.sql' : 'sqlite-schema.sql');
   const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 
   // Detect if customers table has an obsolete schema (phone_number/merchant_id instead of email/mobile_number, or password_hash NOT NULL).
   // The old table is only rebuilt when it holds no customers: a schema mismatch must never destroy customer data.
-  try {
+  if (!db.isPostgres) try {
     const tableInfo = db.query ? db.query("PRAGMA table_info(customers)") : [];
     const colNames = (tableInfo || []).map(c => c.name);
     const hasOldColumns = colNames.length > 0 && (

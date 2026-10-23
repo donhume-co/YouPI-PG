@@ -58,7 +58,7 @@ export class PaymentSessionRepository {
     // is terminal, so the newest row must win. Without an explicit ordering a stale
     // terminal row could be returned and the caller would miss a SUCCESS session.
     const row = this.db.queryOne(
-      'SELECT * FROM payment_sessions WHERE merchant_id = ? AND order_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1',
+      'SELECT * FROM payment_sessions WHERE merchant_id = ? AND order_id = ? ORDER BY created_at DESC LIMIT 1',
       [merchantId, orderId]
     );
     if (!row) return null;

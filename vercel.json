@@ -5,6 +5,11 @@
       "root": "apps/checkout-portal",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
+      "functions": {
+        "vercel-entrypoint.js": {
+          "includeFiles": "{src/views/**,src/sdk/**,public/**}"
+        }
+      },
       "bindings": [
         { "type": "service", "service": "payment-api", "format": "url", "env": "PAYMENT_API_URL" }
       ]
@@ -13,6 +18,11 @@
       "root": "apps/coin-wallet-store",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
+      "functions": {
+        "vercel-entrypoint.js": {
+          "includeFiles": "{src/*.html,public/**,../../openapi.yaml}"
+        }
+      },
       "rewrites": [
         { "source": "/store/:path(.*)", "destination": "/:path" },
         { "source": "/store", "destination": "/" }
@@ -25,7 +35,12 @@
     "control-center": {
       "root": "apps/control-center",
       "runtime": "node",
-      "entrypoint": "vercel-entrypoint.js"
+      "entrypoint": "vercel-entrypoint.js",
+      "functions": {
+        "vercel-entrypoint.js": {
+          "includeFiles": "{src/views/**,public/**}"
+        }
+      }
     },
     "gmail-observer": {
       "root": "apps/gmail-observer",
@@ -42,6 +57,11 @@
       "root": "apps/merchant-admin",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
+      "functions": {
+        "vercel-entrypoint.js": {
+          "includeFiles": "{src/views/**,public/**}"
+        }
+      },
       "rewrites": [
         { "source": "/admin/:path(.*)", "destination": "/:path" },
         { "source": "/admin", "destination": "/" }
@@ -55,12 +75,22 @@
       "root": "apps/payment-api",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
+      "functions": {
+        "vercel-entrypoint.js": {
+          "includeFiles": "{public/**,../../packages/db/src/*.sql,../../packages/db/src/postgres-worker.js}"
+        }
+      },
       "bindings": []
     },
     "payment-help": {
       "root": "apps/payment-help",
       "runtime": "node",
       "entrypoint": "vercel-entrypoint.js",
+      "functions": {
+        "vercel-entrypoint.js": {
+          "includeFiles": "{src/views/**,public/**}"
+        }
+      },
       "rewrites": [
         { "source": "/help/:path(.*)", "destination": "/:path" },
         { "source": "/help", "destination": "/" }

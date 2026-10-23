@@ -1,0 +1,13 @@
+# Local development/build artifacts are not part of the serverless deployment.
+node_modules
+.git
+.github
+.agents
+assets/*.mp4
+assets/*.gif
+data/*.sqlite
+data/*.sqlite-*
+data/.secrets
+data/backups
+.env*
+*.log

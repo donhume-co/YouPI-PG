@@ -32,5 +32,8 @@
     "node": ">=24.0.0"
   },
   "author": "Antigravity Systems",
-  "license": "Commercial"
+  "license": "Commercial",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0"
+  }
 }
