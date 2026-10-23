@@ -64,6 +64,33 @@ async function handle(message) {
       return;
     }
 
+    // Schema migrations and index setup are sent as a batch of SQL statements.
+    // Neon HTTP prepared statements reject multiple commands in one request;
+    // use the pg pool's simple-query path for this DDL-only operation instead.
+    if (op === 'exec') {
+      if (transactionOpen) {
+        await transactionClient.query(sql);
+      } else if (String(sql).split(';').filter((statement) => statement.trim()).length <= 1) {
+        // Keep single-statement DDL on the HTTP path; it is faster and avoids
+        // opening a websocket for every compatibility ALTER/CREATE attempt.
+        await neonSql.query(sql, params);
+      } else {
+        // `poolQueryViaFetch` uses Neon HTTP prepared statements, which reject
+        // multi-command SQL. Temporarily use the pool's websocket/simple-query
+        // path for this migration-only batch, then restore the serverless-safe
+        // fetch mode for normal calls.
+        const previousPoolMode = neonConfig.poolQueryViaFetch;
+        neonConfig.poolQueryViaFetch = false;
+        try {
+          await pool.query(sql);
+        } finally {
+          neonConfig.poolQueryViaFetch = previousPoolMode;
+        }
+      }
+      signal(sab, { ok: true, result: null });
+      return;
+    }
+
     const result = transactionOpen
       ? await transactionClient.query({ text: sql, values: params })
       : { rows: await neonSql.query(sql, params), rowCount: 0 };
