@@ -11,6 +11,7 @@ const RESPONSE_BYTES = 4 * 1024 * 1024;
 export class PostgresBridge {
   constructor(connectionString) {
     this.worker = new Worker(new URL('./postgres-worker.js', import.meta.url), {
+      type: 'module',
       workerData: { connectionString },
       execArgv: []
     });
