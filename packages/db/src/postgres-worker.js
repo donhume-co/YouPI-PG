@@ -27,6 +27,52 @@ function signal(sab, payload) {
   Atomics.notify(control, 0);
 }
 
+function splitSqlStatements(sql) {
+  const statements = [];
+  let start = 0;
+  let quote = null;
+  let dollarTag = null;
+  for (let i = 0; i < sql.length; i += 1) {
+    const ch = sql[i];
+    const next = sql[i + 1];
+    if (dollarTag) {
+      if (sql.startsWith(dollarTag, i)) {
+        i += dollarTag.length - 1;
+        dollarTag = null;
+      }
+      continue;
+    }
+    if (quote) {
+      if (ch === quote && next === quote) {
+        i += 1;
+      } else if (ch === quote && sql[i - 1] !== '\\') {
+        quote = null;
+      }
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      quote = ch;
+      continue;
+    }
+    if (ch === '$') {
+      const match = sql.slice(i).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$/);
+      if (match) {
+        dollarTag = match[0];
+        i += dollarTag.length - 1;
+        continue;
+      }
+    }
+    if (ch === ';') {
+      const statement = sql.slice(start, i).trim();
+      if (statement) statements.push(statement);
+      start = i + 1;
+    }
+  }
+  const tail = sql.slice(start).trim();
+  if (tail) statements.push(tail);
+  return statements;
+}
+
 async function handle(message) {
   const { sab, op, sql, params = [] } = message;
   try {
@@ -65,26 +111,16 @@ async function handle(message) {
     }
 
     // Schema migrations and index setup are sent as a batch of SQL statements.
-    // Neon HTTP prepared statements reject multiple commands in one request;
-    // use the pg pool's simple-query path for this DDL-only operation instead.
+    // Neon HTTP prepared statements reject multiple commands in one request.
+    // Execute each statement individually so serverless startup does not depend
+    // on opening a websocket just to apply schema DDL.
     if (op === 'exec') {
-      if (transactionOpen) {
-        await transactionClient.query(sql);
-      } else if (String(sql).split(';').filter((statement) => statement.trim()).length <= 1) {
-        // Keep single-statement DDL on the HTTP path; it is faster and avoids
-        // opening a websocket for every compatibility ALTER/CREATE attempt.
-        await neonSql.query(sql, params);
-      } else {
-        // `poolQueryViaFetch` uses Neon HTTP prepared statements, which reject
-        // multi-command SQL. Temporarily use the pool's websocket/simple-query
-        // path for this migration-only batch, then restore the serverless-safe
-        // fetch mode for normal calls.
-        const previousPoolMode = neonConfig.poolQueryViaFetch;
-        neonConfig.poolQueryViaFetch = false;
-        try {
-          await pool.query(sql);
-        } finally {
-          neonConfig.poolQueryViaFetch = previousPoolMode;
+      const statements = splitSqlStatements(String(sql));
+      for (const statement of statements) {
+        if (transactionOpen) {
+          await transactionClient.query(statement);
+        } else {
+          await neonSql.query(statement, []);
         }
       }
       signal(sab, { ok: true, result: null });

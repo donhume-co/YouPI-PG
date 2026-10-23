@@ -21,6 +21,7 @@ export function ensureDatabaseInitialized(db) {
     if (!row || Number(row.count) === 0) {
       return runMigrations(db);
     }
+    return { alreadyInitialized: true };
   } catch {
     return runMigrations(db);
   }
