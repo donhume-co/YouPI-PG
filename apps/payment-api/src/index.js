@@ -52,8 +52,13 @@ import { ObserverPollerService } from './services/observer-poller.service.js';
 
 export function createPaymentApp(customDb = null, options = {}) {
   const db = customDb || getDatabase();
-  ensureDatabaseInitialized(db);
-  const { defaultMerchant } = runMigrations(db);
+  const initialization = ensureDatabaseInitialized(db);
+  // Avoid replaying the full schema on every serverless cold start. The
+  // health check above performs a one-time migration for a fresh database;
+  // existing databases only need the lightweight merchant/account seed pass.
+  const { defaultMerchant } = initialization?.defaultMerchant
+    ? initialization
+    : runMigrations(db, { skipSchema: initialization?.alreadyInitialized === true });
   const isCustom = !!customDb;
   const whatsappBerryService = options.whatsappBerryService || (isCustom ? new WhatsAppBerryService({
     sessionId: 'test_berry_session',

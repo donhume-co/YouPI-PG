@@ -14,15 +14,17 @@ const __dirname = path.dirname(__filename);
 /**
  * Runs database migrations and applies base seeds.
  * @param {import('./database.js').Database} [targetDb]
+ * @param {{ skipSchema?: boolean }} [options]
  */
-export function runMigrations(targetDb) {
+export function runMigrations(targetDb, options = {}) {
   const db = targetDb || getDatabase();
+  const skipSchema = options.skipSchema === true;
   const schemaPath = path.join(__dirname, db.isPostgres ? 'schema.sql' : 'sqlite-schema.sql');
   const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 
   // Detect if customers table has an obsolete schema (phone_number/merchant_id instead of email/mobile_number, or password_hash NOT NULL).
   // The old table is only rebuilt when it holds no customers: a schema mismatch must never destroy customer data.
-  if (!db.isPostgres) try {
+  if (!skipSchema && !db.isPostgres) try {
     const tableInfo = db.query ? db.query("PRAGMA table_info(customers)") : [];
     const colNames = (tableInfo || []).map(c => c.name);
     const hasOldColumns = colNames.length > 0 && (
@@ -47,6 +49,7 @@ export function runMigrations(targetDb) {
     console.error('[migrate] Could not inspect customers table schema; skipping rebuild:', err.message);
   }
 
+  if (!skipSchema) {
   // Fallback alter columns if customers/sessions table exists without new columns
   try { db.exec("ALTER TABLE merchants ADD COLUMN api_key_hash TEXT;"); } catch {}
   try { db.exec("ALTER TABLE customers ADD COLUMN email TEXT;"); } catch {}
@@ -116,6 +119,7 @@ export function runMigrations(targetDb) {
   try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_observations_unique_attributed_bank_ref ON payment_observations (bank_reference_number) WHERE bank_reference_number IS NOT NULL AND attributed_payment_id IS NOT NULL;"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_observations_fingerprint ON payment_observations (fingerprint_hash);"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_observations_attributed_payment ON payment_observations (attributed_payment_id);"); } catch {}
+  }
 
   // Seed default merchant if empty
   const merchantRepo = new MerchantRepository(db);
