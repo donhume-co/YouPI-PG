@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Worker } from 'node:worker_threads';
 
 const RESPONSE_BYTES = 4 * 1024 * 1024;
@@ -10,7 +13,16 @@ const RESPONSE_BYTES = 4 * 1024 * 1024;
  */
 export class PostgresBridge {
   constructor(connectionString) {
-    this.worker = new Worker(new URL('./postgres-worker.js', import.meta.url), {
+    const bundledWorker = fileURLToPath(new URL('./postgres-worker.js', import.meta.url));
+    const workerCandidates = [
+      bundledWorker,
+      path.resolve(process.cwd(), 'packages/db/src/postgres-worker.js'),
+      path.resolve(process.cwd(), 'apps/payment-api/packages/db/src/postgres-worker.js'),
+      path.resolve(process.cwd(), '../../packages/db/src/postgres-worker.js')
+    ];
+    const workerPath = workerCandidates.find((candidate) => fs.existsSync(candidate));
+    const workerUrl = workerPath ? pathToFileURL(workerPath) : new URL('./postgres-worker.js', import.meta.url);
+    this.worker = new Worker(workerUrl, {
       type: 'module',
       workerData: { connectionString },
       execArgv: []
