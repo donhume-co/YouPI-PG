@@ -7,11 +7,7 @@
       "entrypoint": "vercel-entrypoint.js",
       "functions": {
         "vercel-entrypoint.js": {
-          "includeFiles": [
-            "src/views/**",
-            "src/sdk/**",
-            "public/**"
-          ]
+          "includeFiles": "{src/views/**,src/sdk/**,public/**}"
         }
       },
       "bindings": [
@@ -24,11 +20,7 @@
       "entrypoint": "vercel-entrypoint.js",
       "functions": {
         "vercel-entrypoint.js": {
-          "includeFiles": [
-            "src/*.html",
-            "public/**",
-            "../../openapi.yaml"
-          ]
+          "includeFiles": "{src/*.html,public/**,../../openapi.yaml}"
         }
       },
       "rewrites": [
@@ -46,10 +38,7 @@
       "entrypoint": "vercel-entrypoint.js",
       "functions": {
         "vercel-entrypoint.js": {
-          "includeFiles": [
-            "src/views/**",
-            "public/**"
-          ]
+          "includeFiles": "{src/views/**,public/**}"
         }
       }
     },
@@ -70,10 +59,7 @@
       "entrypoint": "vercel-entrypoint.js",
       "functions": {
         "vercel-entrypoint.js": {
-          "includeFiles": [
-            "src/views/**",
-            "public/**"
-          ]
+          "includeFiles": "{src/views/**,public/**}"
         }
       },
       "rewrites": [
@@ -91,10 +77,7 @@
       "entrypoint": "vercel-entrypoint.js",
       "functions": {
         "vercel-entrypoint.js": {
-          "includeFiles": [
-            "public/**",
-            "../../packages/db/src/*.sql"
-          ]
+          "includeFiles": "{public/**,../../packages/db/src/*.sql}"
         }
       },
       "bindings": []
@@ -105,10 +88,7 @@
       "entrypoint": "vercel-entrypoint.js",
       "functions": {
         "vercel-entrypoint.js": {
-          "includeFiles": [
-            "src/views/**",
-            "public/**"
-          ]
+          "includeFiles": "{src/views/**,public/**}"
         }
       },
       "rewrites": [
