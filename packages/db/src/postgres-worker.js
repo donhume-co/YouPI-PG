@@ -1,8 +1,12 @@
 import { parentPort, workerData } from 'node:worker_threads';
-import { Client } from '@neondatabase/serverless';
+import { neon, Pool, neonConfig } from '@neondatabase/serverless';
 
-const client = new Client(workerData.connectionString);
-let connected = false;
+// Neon HTTP queries avoid keeping a WebSocket/TCP connection alive in a
+// serverless function. Interactive transactions still use a pooled client.
+neonConfig.poolQueryViaFetch = true;
+const neonSql = neon(workerData.connectionString);
+const pool = new Pool({ connectionString: workerData.connectionString, connectionTimeoutMillis: 10000 });
+let transactionClient = null;
 let transactionOpen = false;
 
 function encode(value) {
@@ -23,43 +27,46 @@ function signal(sab, payload) {
   Atomics.notify(control, 0);
 }
 
-async function connect() {
-  if (!connected) {
-    await client.connect();
-    connected = true;
-  }
-}
-
 async function handle(message) {
   const { sab, op, sql, params = [] } = message;
   try {
     if (op === 'close') {
-      if (connected) await client.end();
+      if (transactionClient) {
+        try { await transactionClient.release(); } catch {}
+        transactionClient = null;
+      }
+      await pool.end();
       signal(sab, { ok: true, result: null });
       return;
     }
 
-    await connect();
     if (op === 'begin') {
-      await client.query('BEGIN');
+      transactionClient = await pool.connect();
+      await transactionClient.query('BEGIN');
       transactionOpen = true;
       signal(sab, { ok: true, result: null });
       return;
     }
     if (op === 'commit') {
-      await client.query('COMMIT');
+      await transactionClient.query('COMMIT');
+      transactionClient.release();
+      transactionClient = null;
       transactionOpen = false;
       signal(sab, { ok: true, result: null });
       return;
     }
     if (op === 'rollback') {
-      await client.query('ROLLBACK');
+      if (transactionClient) await transactionClient.query('ROLLBACK');
+      if (transactionClient) transactionClient.release();
+      transactionClient = null;
       transactionOpen = false;
       signal(sab, { ok: true, result: null });
       return;
     }
 
-    const result = await client.query({ text: sql, values: params });
+    const result = transactionOpen
+      ? await transactionClient.query({ text: sql, values: params })
+      : { rows: await neonSql.query(sql, params), rowCount: 0 };
     if (op === 'query') {
       signal(sab, { ok: true, result: result.rows });
     } else {
