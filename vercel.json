@@ -77,7 +77,7 @@
       "entrypoint": "vercel-entrypoint.js",
       "functions": {
         "vercel-entrypoint.js": {
-          "includeFiles": "{public/**,../../packages/db/src/*.sql}"
+          "includeFiles": "{public/**,../../packages/db/src/*.sql,../../packages/db/src/postgres-worker.js}"
         }
       },
       "bindings": []
